@@ -8,6 +8,7 @@ import (
 	"github.com/arjnep/gyanpass/pkg/response"
 	"github.com/arjnep/gyanpass/pkg/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func (h *UserHandler) GetUser(c *gin.Context) {
@@ -22,13 +23,37 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		return
 	}
 
-	uid := user.(*jwt.TokenClaims).User.UID
-	log.Println("UID is :", uid)
-
-	userFetched, err := h.userUsecase.GetUserByID(uid)
+	// Extract the user ID from path parameters
+	pathUserID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		log.Printf("Unable to find user: %v\n%v", uid, err)
-		e := response.NewNotFoundError("user", uid.String())
+		if uuid.IsInvalidLengthError(err) {
+			err := response.NewNotFoundError("users", c.Param("id"))
+			c.JSON(err.Status(), gin.H{
+				"error": err,
+			})
+			return
+		}
+		log.Printf("Unable to Parse User ID From Param for unknown reason: %v\n", c)
+		err := response.NewInternalServerError()
+		c.JSON(err.Status(), gin.H{
+			"error": err,
+		})
+		return
+	}
+	loggedInUserID := user.(*jwt.TokenClaims).User.UID
+
+	if pathUserID != loggedInUserID {
+		err := response.NewAuthorizationError("Unauthorized access to this user data")
+		c.JSON(err.Status(), gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	userFetched, err := h.userUsecase.GetUserByID(loggedInUserID)
+	if err != nil {
+		log.Printf("Unable to find user: %v\n%v", loggedInUserID, err)
+		e := response.NewNotFoundError("user", loggedInUserID.String())
 
 		c.JSON(e.Status(), gin.H{
 			"error": e,
@@ -50,6 +75,30 @@ type updateReq struct {
 
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	authUser := c.MustGet("user").(*jwt.TokenClaims).User
+	pathUserID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		if uuid.IsInvalidLengthError(err) {
+			err := response.NewNotFoundError("users", c.Param("id"))
+			c.JSON(err.Status(), gin.H{
+				"error": err,
+			})
+			return
+		}
+		log.Printf("Unable to Parse User ID From Param for unknown reason: %v\n", c)
+		err := response.NewInternalServerError()
+		c.JSON(err.Status(), gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	if pathUserID != authUser.UID {
+		err := response.NewAuthorizationError("Unauthorized access to update this user data")
+		c.JSON(err.Status(), gin.H{
+			"error": err,
+		})
+		return
+	}
 
 	existingUser, err := h.userUsecase.GetUserByID(authUser.UID)
 	if err != nil {
@@ -106,8 +155,6 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		})
 		return
 	}
-
-	log.Println(updatedUser)
 
 	c.JSON(http.StatusOK, gin.H{
 		"user": updatedUser,

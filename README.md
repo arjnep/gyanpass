@@ -14,10 +14,10 @@
     * Reset Password =>
     * Delete User =>
 * Book Service
-    * Migrate Entity
-    * Create Repository
-    * Create Usecase
-    * Create Handler
+    * Migrate Entity => Done
+    * Create Repository => Done
+    * Create Usecase => Done
+    * Create Handler => Done
 * Exchange Service
     * Migrate Entity
     * Create Repository

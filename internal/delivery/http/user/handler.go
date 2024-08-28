@@ -26,21 +26,19 @@ func NewUserHandler(c *Config) {
 		jwtService:  c.JwtService,
 	}
 
-	userAuth := c.R.Group("/api/auth")
+	authRoutes := c.R.Group("/api/auth")
 	{
-		userAuth.POST("/register", h.RegisterUser)
-		userAuth.POST("/login", h.LoginUser)
-		userAuth.POST("/logout", middleware.AuthUser(h.jwtService), h.LogoutUser)
+		authRoutes.POST("/register", h.RegisterUser)
+		authRoutes.POST("/login", h.LoginUser)
+		authRoutes.POST("/logout", middleware.AuthUser(h.jwtService), h.LogoutUser)
 		// userAuth.POST("/forgot-password", middleware.AuthUser(h.jwtService), h.ForgotPassword)
-		// userAuth.POST("/reset-password", middleware.AuthUser(h.jwtService), h.ResetPassword)
 	}
 
-	userProfile := c.R.Group("/api")
-	userProfile.Use(middleware.AuthUser(h.jwtService))
+	userRoutes := c.R.Group("/api/users")
 	{
-		userProfile.GET("/user", h.GetUser)
-		userProfile.PUT("/user", h.UpdateUser)
-		// userProfile.DELETE("/user", h.DeleteUser)
-
+		userRoutes.GET("/:id", middleware.AuthUser(h.jwtService), h.GetUser)
+		userRoutes.PUT("/:id", middleware.AuthUser(h.jwtService), h.UpdateUser)
+		// userRoutes.DELETE("/:id", middleware.AuthUser(h.jwtService), h.DeleteUser)
+		// userRoutes.POST("/reset-password", middleware.AuthUser(h.jwtService), h.ResetPassword)
 	}
 }

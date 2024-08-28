@@ -10,10 +10,10 @@ import (
 )
 
 type invalidArgument struct {
-	Field string `json:"field"`
-	Value string `json:"value"`
-	Tag   string `json:"tag"`
-	Param string `json:"param"`
+	Field string      `json:"field"`
+	Value interface{} `json:"value"`
+	Tag   string      `json:"tag"`
+	Param string      `json:"param"`
 }
 
 func BindData(c *gin.Context, req interface{}) bool {
@@ -37,7 +37,7 @@ func BindData(c *gin.Context, req interface{}) bool {
 			for _, err := range errs {
 				invalidArgs = append(invalidArgs, invalidArgument{
 					err.Field(),
-					err.Value().(string),
+					err.Value(),
 					err.Tag(),
 					err.Param(),
 				})
