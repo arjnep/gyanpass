@@ -52,7 +52,7 @@ func BindData(c *gin.Context, req interface{}) bool {
 			return false
 		}
 
-		fallBack := response.NewInternalServerError()
+		fallBack := response.NewBadRequestError("Malformed Payload")
 
 		c.JSON(fallBack.Status(), gin.H{
 			"error": fallBack,

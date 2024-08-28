@@ -10,6 +10,9 @@
     * Create Timeout Middleware => 
     * Create Usecase => Done
     * Create Handler => Done
+    * Forgot Password =>
+    * Reset Password =>
+    * Delete User =>
 * Book Service
     * Migrate Entity
     * Create Repository

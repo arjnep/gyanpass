@@ -44,12 +44,20 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 type updateReq struct {
 	FirstName string `gorm:"not null" json:"first_name" binding:"omitempty"`
 	LastName  string `gorm:"not null" json:"last_name" binding:"omitempty"`
-	Email     string `gorm:"unique;not null" json:"email,omitempty" binding:"omitempty,email"`
-	Phone     string `gorm:"unique;not null" json:"phone,omitempty" binding:"omitempty"`
+	// Email     string `gorm:"unique;not null" json:"email,omitempty" binding:"omitempty,email"`
+	Phone string `gorm:"unique;not null" json:"phone,omitempty" binding:"omitempty,len=10"`
 }
 
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	authUser := c.MustGet("user").(*jwt.TokenClaims).User
+
+	existingUser, err := h.userUsecase.GetUserByID(authUser.UID)
+	if err != nil {
+		c.JSON(response.Status(err), gin.H{
+			"error": err,
+		})
+		return
+	}
 
 	var req updateReq
 
@@ -59,16 +67,16 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 
 	updates := make(map[string]interface{})
 
-	if req.FirstName != "" && req.FirstName != authUser.FirstName {
+	if req.FirstName != "" && req.FirstName != existingUser.FirstName {
 		updates["first_name"] = req.FirstName
 	}
-	if req.LastName != "" && req.LastName != authUser.LastName {
+	if req.LastName != "" && req.LastName != existingUser.LastName {
 		updates["last_name"] = req.LastName
 	}
-	if req.Email != "" && req.Email != authUser.Email {
-		updates["email"] = req.Email
-	}
-	if req.Phone != "" && req.Phone != authUser.Phone {
+	// if req.Email != "" && req.Email != existingUser.Email {
+	// 	updates["email"] = req.Email
+	// }
+	if req.Phone != "" && req.Phone != existingUser.Phone {
 		updates["phone"] = req.Phone
 	}
 
@@ -81,7 +89,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	}
 
 	// Update only the fields that have changed
-	err := h.userUsecase.Update(authUser, updates)
+	err = h.userUsecase.Update(existingUser, updates)
 	if err != nil {
 		log.Printf("Failed to update user: %v\n", err.Error())
 		c.JSON(response.Status(err), gin.H{
@@ -90,7 +98,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	updatedUser, err := h.userUsecase.GetUserByID(authUser.UID)
+	updatedUser, err := h.userUsecase.GetUserByID(existingUser.UID)
 	if err != nil {
 		log.Printf("Failed to retrieve updated user details: %v\n", err.Error())
 		c.JSON(response.Status(err), gin.H{

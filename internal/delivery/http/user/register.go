@@ -3,6 +3,7 @@ package user
 import (
 	"log"
 	"net/http"
+	"unicode"
 
 	"github.com/arjnep/gyanpass/internal/entity"
 	"github.com/arjnep/gyanpass/pkg/response"
@@ -14,7 +15,7 @@ type registerReq struct {
 	FirstName string `gorm:"not null" json:"first_name" binding:"required"`
 	LastName  string `gorm:"not null" json:"last_name" binding:"required"`
 	Email     string `gorm:"unique;not null" json:"email" binding:"required,email"`
-	Phone     string `gorm:"unique;not null" json:"phone" binding:"required"`
+	Phone     string `gorm:"unique;not null" json:"phone" binding:"required,len=10"`
 	Password  string `gorm:"not null" json:"password" binding:"required,min=8"`
 }
 
@@ -24,12 +25,20 @@ func (h *UserHandler) RegisterUser(c *gin.Context) {
 		return
 	}
 
+	if !isPasswordValid(req.Password) {
+		c.JSON(http.StatusOK, gin.H{
+			"error": "Password Must contain at least 1 Uppercase, 1 Lowercase, 1 Alphanumeric, 1 Number and should be above 8 character long",
+		})
+		return
+	}
+
 	user := &entity.User{
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 		Email:     req.Email,
 		Phone:     req.Phone,
 		Password:  req.Password,
+		Role:      "user",
 	}
 
 	err := h.userUsecase.Register(user)
@@ -58,4 +67,30 @@ func (h *UserHandler) RegisterUser(c *gin.Context) {
 		"uid":    user.UID,
 	})
 
+}
+
+func isPasswordValid(s string) bool {
+	var (
+		hasMinLen  = false
+		hasUpper   = false
+		hasLower   = false
+		hasNumber  = false
+		hasSpecial = false
+	)
+	if len(s) >= 8 {
+		hasMinLen = true
+	}
+	for _, char := range s {
+		switch {
+		case unicode.IsUpper(char):
+			hasUpper = true
+		case unicode.IsLower(char):
+			hasLower = true
+		case unicode.IsNumber(char):
+			hasNumber = true
+		case unicode.IsPunct(char) || unicode.IsSymbol(char):
+			hasSpecial = true
+		}
+	}
+	return hasMinLen && hasUpper && hasLower && hasNumber && hasSpecial
 }
