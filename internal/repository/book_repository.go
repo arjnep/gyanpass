@@ -38,7 +38,7 @@ func (r *bookRepository) FindByID(id uint) (*entity.Book, error) {
 
 func (r *bookRepository) FindByUserID(uid uuid.UUID) ([]entity.Book, error) {
 	var books []entity.Book
-	err := r.db.Where("uid = ?", uid).Find(&books).Error
+	err := r.db.Where("user_id = ?", uid).Find(&books).Error
 	if err != nil {
 		return nil, err
 	}

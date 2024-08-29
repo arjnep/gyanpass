@@ -1,9 +1,13 @@
 package usecase
 
 import (
+	"fmt"
+
 	"github.com/arjnep/gyanpass/internal/entity"
 	"github.com/arjnep/gyanpass/internal/repository"
+	"github.com/arjnep/gyanpass/pkg/response"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type BookUsecase interface {
@@ -28,7 +32,13 @@ func (u *bookUsecase) AddBook(book *entity.Book) error {
 }
 
 func (u *bookUsecase) GetBookByID(id uint) (*entity.Book, error) {
-	return u.bookRepo.FindByID(id)
+	bookFetched, err := u.bookRepo.FindByID(id)
+	if err != nil && err == gorm.ErrRecordNotFound {
+		return nil, response.NewNotFoundError("book", fmt.Sprintf("%d", id))
+	} else if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, response.NewInternalServerError()
+	}
+	return bookFetched, nil
 }
 
 func (u *bookUsecase) GetBooksByUserID(uid uuid.UUID) ([]entity.Book, error) {

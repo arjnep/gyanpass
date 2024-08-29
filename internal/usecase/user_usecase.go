@@ -9,6 +9,7 @@ import (
 	"github.com/arjnep/gyanpass/pkg/jwt"
 	"github.com/arjnep/gyanpass/pkg/response"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type UserUsecase interface {
@@ -30,13 +31,29 @@ func NewUserUsecase(userRepo repository.UserRepository, jwtService jwt.Service) 
 
 func (u *userUsecase) GetUserByID(uid uuid.UUID) (*entity.User, error) {
 	userFetched, err := u.userRepo.FindByID(uid)
-	if err != nil {
-		return nil, err
+	if err != nil && err == gorm.ErrRecordNotFound {
+		return nil, response.NewNotFoundError("user", userFetched.Email)
+	} else if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, response.NewInternalServerError()
 	}
 	return userFetched, nil
 }
 
 func (u *userUsecase) Register(user *entity.User) error {
+	userFetched, err := u.userRepo.FindByEmail(user.Email)
+	if err == nil && userFetched != nil {
+		return response.NewConflictError("user", user.Email)
+	} else if err != nil && err != gorm.ErrRecordNotFound {
+		return response.NewInternalServerError()
+	}
+
+	userFetched, err = u.userRepo.FindByPhone(user.Phone)
+	if err == nil && userFetched != nil {
+		return response.NewConflictError("user", user.Phone)
+	} else if err != nil && err != gorm.ErrRecordNotFound {
+		return response.NewInternalServerError()
+	}
+
 	hashedPwd, err := crypto.HashPassword(user.Password)
 	if err != nil {
 		log.Printf("Unable to signup user for email: %v\n", user.Email)
@@ -50,8 +67,10 @@ func (u *userUsecase) Register(user *entity.User) error {
 
 func (u *userUsecase) Login(user *entity.User) error {
 	userFetched, err := u.userRepo.FindByEmail(user.Email)
-	if err != nil {
-		return response.NewAuthorizationError("invalid email or password")
+	if err != nil && err == gorm.ErrRecordNotFound {
+		return response.NewNotFoundError("user", user.Email)
+	} else if err != nil && err != gorm.ErrRecordNotFound {
+		return response.NewInternalServerError()
 	}
 
 	match, err := crypto.ComparePasswords(userFetched.Password, user.Password)

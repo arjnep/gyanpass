@@ -28,6 +28,7 @@ func NewBookHandler(c *Config) {
 
 	bookRoutes := c.R.Group("/api/books")
 	{
+		bookRoutes.GET("/", middleware.AuthUser(h.jwtService), h.GetUserBooks)
 		bookRoutes.POST("/", middleware.AuthUser(h.jwtService), h.AddBook)
 		bookRoutes.GET("/search", middleware.Pagination(), h.SearchBooks)
 		bookRoutes.GET("/:id", h.GetBook)

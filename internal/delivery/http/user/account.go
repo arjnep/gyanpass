@@ -53,10 +53,8 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	userFetched, err := h.userUsecase.GetUserByID(loggedInUserID)
 	if err != nil {
 		log.Printf("Unable to find user: %v\n%v", loggedInUserID, err)
-		e := response.NewNotFoundError("user", loggedInUserID.String())
-
-		c.JSON(e.Status(), gin.H{
-			"error": e,
+		c.JSON(response.Status(err), gin.H{
+			"error": err,
 		})
 		return
 	}

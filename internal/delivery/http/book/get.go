@@ -5,10 +5,43 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/arjnep/gyanpass/pkg/jwt"
 	"github.com/arjnep/gyanpass/pkg/response"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
+
+func (h *BookHandler) GetUserBooks(c *gin.Context) {
+	authUser, exists := c.Get("user")
+	if !exists {
+		log.Printf("Unable to extract user from request context for unknown reason: %v\n", c)
+		err := response.NewInternalServerError()
+		c.JSON(err.Status(), gin.H{
+			"error": err,
+		})
+
+		return
+	}
+
+	books, err := h.bookUsecase.GetBooksByUserID(authUser.(*jwt.TokenClaims).User.UID)
+	if err != nil {
+		log.Printf("Failed to Get Books: %v", err)
+		c.JSON(response.Status(err), gin.H{
+			"error": err,
+		})
+	}
+
+	if len(books) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "No Books Available",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"books": books,
+	})
+
+}
 
 func (h *BookHandler) GetBook(c *gin.Context) {
 	pathBookID, err := strconv.Atoi(c.Param("id"))
@@ -22,16 +55,8 @@ func (h *BookHandler) GetBook(c *gin.Context) {
 
 	book, err := h.bookUsecase.GetBookByID(uint(pathBookID))
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			err := response.NewNotFoundError("book", c.Param("id"))
-			c.JSON(err.Status(), gin.H{
-				"error": err,
-			})
-			return
-		}
 		log.Println("Failed Getting Book:", err)
-		err := response.NewInternalServerError()
-		c.JSON(err.Status(), gin.H{
+		c.JSON(response.Status(err), gin.H{
 			"error": err,
 		})
 		return

@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"errors"
-
 	"github.com/arjnep/gyanpass/internal/entity"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -32,27 +30,18 @@ func (r *userRepository) Create(user *entity.User) error {
 func (r *userRepository) FindByID(id uuid.UUID) (*entity.User, error) {
 	var user entity.User
 	err := r.db.First(&user, id).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return &user, errors.New("record not found")
-	}
 	return &user, err
 }
 
 func (r *userRepository) FindByEmail(email string) (*entity.User, error) {
 	var user entity.User
 	err := r.db.Where("email = ?", email).First(&user).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return &user, errors.New("record not found")
-	}
 	return &user, err
 }
 
 func (r *userRepository) FindByPhone(phone string) (*entity.User, error) {
 	var user entity.User
 	err := r.db.Where("phone = ?", phone).First(&user).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return &user, errors.New("record not found")
-	}
 	return &user, err
 }
 
