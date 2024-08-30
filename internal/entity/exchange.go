@@ -6,8 +6,8 @@ type ExchangeRequest struct {
 	ID                   uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
 	RequestedByID        uuid.UUID `gorm:"not null" json:"requested_by_id" binding:"required"`
 	RequestedToID        uuid.UUID `gorm:"not null" json:"requested_to_id" binding:"required"`
-	RequestedBy          User      `gorm:"foreignKey:RequestedByID"`
-	RequestedTo          User      `gorm:"foreignKey:RequestedToID"`
+	RequestedBy          User      `gorm:"foreignKey:RequestedByID" json:"-"`
+	RequestedTo          User      `gorm:"foreignKey:RequestedToID" json:"-"`
 	RequestedBookID      uint      `gorm:"not null" json:"requested_book_id" binding:"required"`
 	RequestedBook        Book      `gorm:"foreignKey:RequestedBookID"`
 	OfferedBookID        uint      `gorm:"not null" json:"offered_book_id" binding:"required"`

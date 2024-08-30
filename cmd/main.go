@@ -14,6 +14,7 @@ import (
 	"github.com/arjnep/gyanpass/config"
 	"github.com/arjnep/gyanpass/internal/db"
 	httpBook "github.com/arjnep/gyanpass/internal/delivery/http/book"
+	httpExchange "github.com/arjnep/gyanpass/internal/delivery/http/exchange"
 	httpUser "github.com/arjnep/gyanpass/internal/delivery/http/user"
 	"github.com/arjnep/gyanpass/internal/delivery/middleware"
 	"github.com/arjnep/gyanpass/internal/repository"
@@ -66,14 +67,14 @@ func main() {
 
 	userRepo := repository.NewUserRepository(database)
 	bookRepo := repository.NewBookRepository(database)
-	// exchangeRepo := repository.NewExchangeRepository(database)
+	exchangeRepo := repository.NewExchangeRepository(database)
 
 	jwtService := jwt.NewJWTService(cfg)
 	// notificationService := notification.NewNotificationService()
 
 	userUsecase := usecase.NewUserUsecase(userRepo, jwtService)
 	bookUsecase := usecase.NewBookUsecase(bookRepo)
-	// exchangeUsecase := usecase.NewExchangeUsecase(exchangeRepo, userRepo, bookRepo, notificationService)
+	exchangeUsecase := usecase.NewExchangeUsecase(exchangeRepo, bookRepo)
 
 	httpUser.NewUserHandler(&httpUser.Config{
 		R:           router,
@@ -85,7 +86,12 @@ func main() {
 		BookUsecase: bookUsecase,
 		JwtService:  jwtService,
 	})
-	// http.NewExchangeHandler(router, exchangeUsecase, bookUsecase, jwtService)
+	httpExchange.NewExchangeHandler(&httpExchange.Config{
+		R:               router,
+		BookUsecase:     bookUsecase,
+		ExchangeUsecase: exchangeUsecase,
+		JwtService:      jwtService,
+	})
 
 	srv := &http.Server{
 		Addr:           ":" + cfg.Server.Port,

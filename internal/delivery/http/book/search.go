@@ -14,16 +14,16 @@ func (h *BookHandler) SearchBooks(c *gin.Context) {
 		"address": c.Query("address"),
 	}
 
-	page, _ := c.Get("page") // Context keys should be adjusted according to the middleware used
+	page, _ := c.Get("page")
 	size, _ := c.Get("size")
 
 	pageInt, ok := page.(int)
 	if !ok {
-		pageInt = 1 // Default page number if not set or invalid
+		pageInt = 1
 	}
 	sizeInt, ok := size.(int)
 	if !ok {
-		sizeInt = 10 // Default page size if not set or invalid
+		sizeInt = 10
 	}
 
 	books, total, err := h.bookUsecase.SearchBooks(queryParams, pageInt, sizeInt)
@@ -49,13 +49,6 @@ func (h *BookHandler) SearchBooks(c *gin.Context) {
 			},
 		})
 	}
-
-	// if len(booksResponse) == 0 {
-	// 	c.JSON(http.StatusOK, gin.H{
-	// 		"message": "No Books Available",
-	// 	})
-	// 	return
-	// }
 
 	totalPages := (total + sizeInt - 1) / sizeInt
 

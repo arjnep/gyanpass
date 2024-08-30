@@ -16,6 +16,6 @@ type Book struct {
 
 type Location struct {
 	Address   string  `json:"address" binding:"omitempty"`
-	Latitude  float64 `gorm:"not null" json:"latitude" binding:"required"`
-	Longitude float64 `gorm:"not null" json:"longitude" binding:"required"`
+	Latitude  float64 `gorm:"not null" json:"latitude,omitempty" binding:"required"`
+	Longitude float64 `gorm:"not null" json:"longitude,omitempty" binding:"required"`
 }

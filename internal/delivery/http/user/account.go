@@ -23,7 +23,6 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		return
 	}
 
-	// Extract the user ID from path parameters
 	pathUserID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		if uuid.IsInvalidLengthError(err) {
@@ -135,7 +134,6 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// Update only the fields that have changed
 	err = h.userUsecase.Update(existingUser, updates)
 	if err != nil {
 		log.Printf("Failed to update user: %v\n", err.Error())

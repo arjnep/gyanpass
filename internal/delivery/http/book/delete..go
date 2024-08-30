@@ -23,7 +23,6 @@ func (h *BookHandler) DeleteBook(c *gin.Context) {
 		return
 	}
 
-	// Get the existing book
 	existingBook, err := h.bookUsecase.GetBookByID(uint(pathBookID))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {

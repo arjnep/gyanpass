@@ -6,10 +6,8 @@ import (
 	"net/http"
 )
 
-// Type holds a type string and integer code for the error
 type Type string
 
-// "Set" of valid errorTypes
 const (
 	Authorization        Type = "AUTHORIZATION"
 	BadRequest           Type = "BAD_REQUEST"

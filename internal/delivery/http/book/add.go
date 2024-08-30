@@ -50,6 +50,7 @@ func (h *BookHandler) AddBook(c *gin.Context) {
 			Latitude:  req.Latitude,
 			Longitude: req.Longitude,
 		},
+		IsActive: true,
 	}
 
 	err := h.bookUsecase.AddBook(&newBook)

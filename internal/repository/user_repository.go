@@ -46,7 +46,6 @@ func (r *userRepository) FindByPhone(phone string) (*entity.User, error) {
 }
 
 func (r *userRepository) Update(user *entity.User, updates map[string]interface{}) error {
-	// return r.db.Save(user).Error
 	return r.db.Model(user).Updates(updates).Error
 }
 

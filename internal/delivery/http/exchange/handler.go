@@ -9,6 +9,7 @@ import (
 )
 
 type ExchangeHandler struct {
+	bookUsecase     usecase.BookUsecase
 	exchangeUsecase usecase.ExchangeUsecase
 	jwtService      jwt.Service
 	Cfg             *config.Configuration
@@ -16,12 +17,14 @@ type ExchangeHandler struct {
 
 type Config struct {
 	R               *gin.Engine
+	BookUsecase     usecase.BookUsecase
 	ExchangeUsecase usecase.ExchangeUsecase
 	JwtService      jwt.Service
 }
 
-func NewBookHandler(c *Config) {
+func NewExchangeHandler(c *Config) {
 	h := &ExchangeHandler{
+		bookUsecase:     c.BookUsecase,
 		exchangeUsecase: c.ExchangeUsecase,
 		jwtService:      c.JwtService,
 	}
@@ -35,7 +38,7 @@ func NewBookHandler(c *Config) {
 		exchangeRoutes.POST("/:id/accept", middleware.AuthUser(h.jwtService), h.AcceptExchangeRequest)
 		exchangeRoutes.POST("/:id/decline", middleware.AuthUser(h.jwtService), h.DeclineExchangeRequest)
 		exchangeRoutes.POST("/:id/confirm", middleware.AuthUser(h.jwtService), h.ConfirmExchangeRequest)
-		exchangeRoutes.DELETE("/:id/decline", middleware.AuthUser(h.jwtService), h.DeleteExchangeRequest)
+		exchangeRoutes.DELETE("/:id/delete", middleware.AuthUser(h.jwtService), h.DeleteExchangeRequest)
 
 	}
 }

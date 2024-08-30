@@ -51,7 +51,7 @@ func (r *exchangeRepository) FindByRequestedToID(userID uuid.UUID) ([]entity.Exc
 
 func (r *exchangeRepository) CanRequest(requestedByID, requestedToID uuid.UUID) (bool, error) {
 	var count int64
-	err := r.db.Where("requested_by_id = ? AND requested_to_id = ? AND (status = ? OR status = ? OR status = ? OR status = ?)",
+	err := r.db.Model(&entity.ExchangeRequest{}).Where("requested_by_id = ? AND requested_to_id = ? AND status IN (?, ?)",
 		requestedByID, requestedToID, "pending", "accepted").
 		Count(&count).Error
 	if err != nil {
@@ -73,7 +73,7 @@ func (r *exchangeRepository) FindPendingRequests(requestedByID, requestedToID uu
 
 func (r *exchangeRepository) FindPendingRequestsByBookID(bookID uint) ([]entity.ExchangeRequest, error) {
 	var requests []entity.ExchangeRequest
-	err := r.db.Where("requested_book_id = ? OR offered_book_id = ?) AND status = ?", bookID, bookID, "pending").Find(&requests).Error
+	err := r.db.Where("(requested_book_id = ? OR offered_book_id = ?) AND status = ?", bookID, bookID, "pending").Find(&requests).Error
 	return requests, err
 }
 

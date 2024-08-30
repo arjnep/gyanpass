@@ -11,7 +11,7 @@ import (
 )
 
 type ExchangeUsecase interface {
-	RequestExchange(request *entity.ExchangeRequest) error
+	RequestExchange(request *entity.ExchangeRequest) (*entity.ExchangeRequest, error)
 	GetExchangeRequestByID(id uuid.UUID, userID uuid.UUID) (*entity.ExchangeRequest, error)
 	GetExchangeRequestsByRequestedByID(userID uuid.UUID) ([]entity.ExchangeRequest, error)
 	GetExchangeRequestsByRequestedToID(userID uuid.UUID) ([]entity.ExchangeRequest, error)
@@ -30,30 +30,35 @@ func NewExchangeUsecase(exchangeRepo repository.ExchangeRepository, bookRepo rep
 	return &exchangeUsecase{exchangeRepo, bookRepo}
 }
 
-func (u *exchangeUsecase) RequestExchange(request *entity.ExchangeRequest) error {
+func (u *exchangeUsecase) RequestExchange(request *entity.ExchangeRequest) (*entity.ExchangeRequest, error) {
 	if u.exchangeRepo.IsSelfRequest(request.RequestedByID, request.RequestedToID) {
-		return response.NewBadRequestError("Cannot Request To Yourself")
+		return nil, response.NewBadRequestError("Cannot Request To Yourself")
 	}
 	canRequest, err := u.exchangeRepo.CanRequest(request.RequestedByID, request.RequestedToID)
 	if err != nil {
-		return response.NewInternalServerError()
+		return nil, response.NewInternalServerError()
 	}
 	if !canRequest {
-		return response.NewConflictError("exchange request", "one request already exists with this user")
+		return nil, response.NewConflictError("exchange request", "one request already exists with this user")
 	}
 	if !request.RequestedBook.IsActive {
-		return response.NewConflictError("book", "requested book already in exchanging process")
+		return nil, response.NewConflictError("book", "requested book already in exchanging process")
 	}
 	if !request.OfferedBook.IsActive {
-		return response.NewConflictError("book", "offered book already in exchanging process")
+		return nil, response.NewConflictError("book", "offered book already in exchanging process")
 	}
 
 	request.Status = "pending"
 	request.RequestedByConfirmed = false
 	request.RequestedToConfirmed = false
 
-	return u.exchangeRepo.Create(request)
+	err = u.exchangeRepo.Create(request)
+	if err != nil {
+		return nil, response.NewInternalServerError()
+	}
 
+	u.sanitizeExchangeRequest(request, request.RequestedByID)
+	return request, nil
 }
 
 func (u *exchangeUsecase) GetExchangeRequestByID(id uuid.UUID, userID uuid.UUID) (*entity.ExchangeRequest, error) {
@@ -65,10 +70,11 @@ func (u *exchangeUsecase) GetExchangeRequestByID(id uuid.UUID, userID uuid.UUID)
 	}
 
 	if request.RequestedByID != userID && request.RequestedToID != userID {
-		return nil, response.NewAuthorizationError("you do not have permission")
+		// return nil, response.NewAuthorizationError("you do not have permission")
+		return nil, response.NewNotFoundError("exchange request", fmt.Sprintf("%v", id))
 	}
 
-	if request.Status == "accepted" || request.Status == "exchanged" {
+	if request.Status != "accepted" && request.Status != "exchanged" {
 		u.sanitizeExchangeRequest(request, userID)
 	}
 
@@ -108,7 +114,8 @@ func (u *exchangeUsecase) GetExchangeRequestsByRequestedToID(userID uuid.UUID) (
 
 func (u *exchangeUsecase) AcceptExchange(request *entity.ExchangeRequest, userID uuid.UUID) error {
 	if request.RequestedToID != userID {
-		return response.NewAuthorizationError("you do not have permission")
+		// return response.NewAuthorizationError("you do not have permission")
+		return response.NewNotFoundError("exchange request", fmt.Sprintf("%v", request.ID))
 	}
 	if request.Status != "pending" {
 		return response.NewBadRequestError("request already accepted or declined")
@@ -125,7 +132,9 @@ func (u *exchangeUsecase) AcceptExchange(request *entity.ExchangeRequest, userID
 
 func (u *exchangeUsecase) DeclineExchange(request *entity.ExchangeRequest, userID uuid.UUID) error {
 	if request.RequestedToID != userID {
-		return response.NewAuthorizationError("you do not have permission")
+		// return response.NewAuthorizationError("you do not have permission")
+		return response.NewNotFoundError("exchange request", fmt.Sprintf("%v", request.ID))
+
 	}
 	if request.Status != "pending" {
 		return response.NewBadRequestError("request already accepted or declined")
@@ -139,10 +148,13 @@ func (u *exchangeUsecase) DeclineExchange(request *entity.ExchangeRequest, userI
 
 func (u *exchangeUsecase) ConfirmExchange(request *entity.ExchangeRequest, userID uuid.UUID) error {
 	if request.RequestedByID != userID && request.RequestedToID != userID {
-		return response.NewAuthorizationError("you do not have permission")
+		// return response.NewAuthorizationError("you do not have permission")
+		return response.NewNotFoundError("exchange request", fmt.Sprintf("%v", request.ID))
 	}
 	if request.Status == "exchanged" {
 		return response.NewBadRequestError("request is already confirmed")
+	} else if request.Status == "declined" {
+		return response.NewBadRequestError("request is already declined")
 	} else if request.Status == "pending" {
 		return response.NewBadRequestError("request is not accepted")
 	}
@@ -161,7 +173,8 @@ func (u *exchangeUsecase) ConfirmExchange(request *entity.ExchangeRequest, userI
 
 func (u *exchangeUsecase) DeleteExchangeRequest(request *entity.ExchangeRequest, userID uuid.UUID) error {
 	if request.RequestedByID != userID {
-		return response.NewAuthorizationError("you do not have permission")
+		// return response.NewAuthorizationError("you do not have permission")
+		return response.NewNotFoundError("exchange request", fmt.Sprintf("%v", request.ID))
 	}
 	if request.Status != "pending" {
 		return response.NewBadRequestError("only pending requests can be deleted")
@@ -237,7 +250,9 @@ func (u *exchangeUsecase) resolveExchangeRequest(request *entity.ExchangeRequest
 			return response.NewInternalServerError()
 		}
 	case "exchanged":
-		request.Status = "exchanged"
+		if request.RequestedByConfirmed && request.RequestedToConfirmed {
+			request.Status = "exchanged"
+		}
 		err := u.exchangeRepo.Update(request)
 		if err != nil {
 			return response.NewInternalServerError()
@@ -247,14 +262,16 @@ func (u *exchangeUsecase) resolveExchangeRequest(request *entity.ExchangeRequest
 }
 
 func (u *exchangeUsecase) sanitizeExchangeRequest(request *entity.ExchangeRequest, userID uuid.UUID) {
+	request.RequestedBook.Owner.Role = ""
+	request.OfferedBook.Owner.Role = ""
 	if request.RequestedByID == userID {
 		request.RequestedBook.PickupLocation.Latitude = 0
 		request.RequestedBook.PickupLocation.Longitude = 0
 		request.RequestedBook.Owner.Email = ""
 		request.RequestedBook.Owner.Phone = ""
 	} else if request.RequestedToID == userID {
-		request.RequestedBook.PickupLocation.Latitude = 0
-		request.RequestedBook.PickupLocation.Longitude = 0
+		request.OfferedBook.PickupLocation.Latitude = 0
+		request.OfferedBook.PickupLocation.Longitude = 0
 		request.OfferedBook.Owner.Email = ""
 		request.OfferedBook.Owner.Phone = ""
 	}

@@ -13,7 +13,6 @@ type authHeader struct {
 	Token string `header:"Authorization"`
 }
 
-// used to help extract validation errors
 type invalidArgument struct {
 	Field string `json:"field"`
 	Value string `json:"value"`
@@ -25,7 +24,6 @@ func AuthUser(s jwt.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		h := authHeader{}
 
-		// bind Authorization Header to h and check for validation errors
 		if err := c.ShouldBindHeader(&h); err != nil {
 			if errs, ok := err.(validator.ValidationErrors); ok {
 				var invalidArgs []invalidArgument
@@ -49,7 +47,6 @@ func AuthUser(s jwt.Service) gin.HandlerFunc {
 				return
 			}
 
-			// otherwise error type is unknown
 			err := response.NewInternalServerError()
 			c.JSON(err.Status(), gin.H{
 				"error": err,
@@ -78,7 +75,6 @@ func AuthUser(s jwt.Service) gin.HandlerFunc {
 			}
 		}
 
-		// validate ID token here
 		user, err := s.ValidateToken(token)
 
 		if err != nil {
