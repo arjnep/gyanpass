@@ -11,6 +11,7 @@ type Book struct {
 	UserID         uuid.UUID `gorm:"not null" json:"user_id,omitempty"`
 	Owner          User      `gorm:"foreignKey:UserID" json:"owner"`
 	PickupLocation Location  `gorm:"embedded" json:"location,omitempty" binding:"required"`
+	IsActive       bool      `json:"is_active"`
 }
 
 type Location struct {

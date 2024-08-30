@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/arjnep/gyanpass/internal/entity"
@@ -32,7 +33,7 @@ func NewUserUsecase(userRepo repository.UserRepository, jwtService jwt.Service) 
 func (u *userUsecase) GetUserByID(uid uuid.UUID) (*entity.User, error) {
 	userFetched, err := u.userRepo.FindByID(uid)
 	if err != nil && err == gorm.ErrRecordNotFound {
-		return nil, response.NewNotFoundError("user", userFetched.Email)
+		return nil, response.NewNotFoundError("user", fmt.Sprintf("%v", uid))
 	} else if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, response.NewInternalServerError()
 	}

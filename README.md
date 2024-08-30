@@ -18,11 +18,12 @@
     * Create Repository => Done
     * Create Usecase => Done
     * Create Handler => Done
+    * Add Filter Struct to Book Repo => 
 * Exchange Service
-    * Migrate Entity
-    * Create Repository
-    * Create Usecase
-    * Create Handler
+    * Migrate Entity => Done
+    * Create Repository => Done
+    * Create Usecase => Done
+    * Create Handler => 
 * Notification Service
     * Create Model
     * Create Notification
