@@ -37,16 +37,10 @@ func (h *BookHandler) SearchBooks(c *gin.Context) {
 	var booksResponse []gin.H
 	for _, book := range books {
 		booksResponse = append(booksResponse, gin.H{
-			"id":          book.ID,
-			"title":       book.Title,
-			"author":      book.Author,
-			"genre":       book.Genre,
-			"description": book.Description,
-			"owner": gin.H{
-				"user_id":    book.Owner.UID,
-				"first_name": book.Owner.FirstName,
-				"last_name":  book.Owner.LastName,
-			},
+			"id":     book.ID,
+			"title":  book.Title,
+			"author": book.Author,
+			"genre":  book.Genre,
 		})
 	}
 

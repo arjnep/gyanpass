@@ -31,7 +31,7 @@ func NewBookHandler(c *Config) {
 		bookRoutes.GET("/", middleware.AuthUser(h.jwtService), h.GetUserBooks)
 		bookRoutes.POST("/", middleware.AuthUser(h.jwtService), h.AddBook)
 		bookRoutes.GET("/search", middleware.Pagination(), h.SearchBooks)
-		bookRoutes.GET("/:id", h.GetBook)
+		bookRoutes.GET("/:id", middleware.AuthUser(h.jwtService), h.GetBook)
 		bookRoutes.PUT("/:id", middleware.AuthUser(h.jwtService), h.UpdateBook)
 		bookRoutes.DELETE("/:id", middleware.AuthUser(h.jwtService), h.DeleteBook)
 	}

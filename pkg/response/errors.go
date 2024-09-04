@@ -21,6 +21,7 @@ const (
 
 type Error struct {
 	Type    Type   `json:"type"`
+	Value   string `json:"value,omitempty"`
 	Message string `json:"message"`
 }
 
@@ -76,6 +77,7 @@ func NewBadRequestError(reason string) *Error {
 func NewConflictError(name string, value string) *Error {
 	return &Error{
 		Type:    Conflict,
+		Value:   value,
 		Message: fmt.Sprintf("resource: %v with value: %v already exists", name, value),
 	}
 }
@@ -90,6 +92,7 @@ func NewInternalServerError() *Error {
 func NewNotFoundError(name string, value string) *Error {
 	return &Error{
 		Type:    NotFound,
+		Value:   value,
 		Message: fmt.Sprintf("resource: %v with value: %v not found", name, value),
 	}
 }

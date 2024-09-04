@@ -26,7 +26,7 @@ func (h *UserHandler) RegisterUser(c *gin.Context) {
 	}
 
 	if !isPasswordValid(req.Password) {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Password Must contain at least 1 Uppercase, 1 Lowercase, 1 Alphanumeric, 1 Number and should be above 8 character long",
 		})
 		return
@@ -62,9 +62,10 @@ func (h *UserHandler) RegisterUser(c *gin.Context) {
 	c.SetCookie("token", token, 900, "/", "", true, true)
 	c.SetCookie("uid", user.UID.String(), 900, "/", "", true, true)
 
+	user.Password = ""
 	c.JSON(http.StatusCreated, gin.H{
 		"tokens": token,
-		"uid":    user.UID,
+		"user":   user,
 	})
 
 }

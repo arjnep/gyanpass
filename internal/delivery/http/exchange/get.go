@@ -3,12 +3,66 @@ package exchange
 import (
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/arjnep/gyanpass/pkg/jwt"
 	"github.com/arjnep/gyanpass/pkg/response"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
+
+func (h *ExchangeHandler) GetUserExchangeRequests(c *gin.Context) {
+	authUser, exists := c.Get("user")
+	if !exists {
+		log.Printf("Unable to extract user from request context: %v\n", c)
+		err := response.NewInternalServerError()
+		c.JSON(err.Status(), gin.H{
+			"error": err,
+		})
+		return
+	}
+	loggedInUserID := authUser.(*jwt.TokenClaims).User.UID
+
+	bookIDParam := c.Query("bookID")
+	if bookIDParam != "" {
+		parsedBookID, err := strconv.ParseUint(bookIDParam, 10, 32)
+		if err != nil {
+			log.Printf("Invalid book id: %v\n", err)
+			err := response.NewBadRequestError("Invalid book id")
+			c.JSON(err.Status(), gin.H{
+				"error": err,
+			})
+			return
+		}
+		requests, err := h.exchangeUsecase.GetExchangeRequestsByBookIDAndUserID(uint(parsedBookID), loggedInUserID)
+		if err != nil {
+			log.Printf("Failed to get exchange requests by book ID %v: %v\n", loggedInUserID, err)
+			c.JSON(response.Status(err), gin.H{
+				"error": err,
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"requests": requests,
+		})
+		return
+	}
+
+	// Fetch exchange requests related to the logged-in user
+	requests, err := h.exchangeUsecase.GetExchangeRequestsByUserID(loggedInUserID)
+	if err != nil {
+		log.Printf("Failed to get exchange requests by user ID %v: %v\n", loggedInUserID, err)
+		c.JSON(response.Status(err), gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"requests": requests,
+	})
+}
 
 func (h *ExchangeHandler) GetExchangeRequestByID(c *gin.Context) {
 	authUser, exists := c.Get("user")
@@ -75,13 +129,6 @@ func (h *ExchangeHandler) GetExchangeRequestsMade(c *gin.Context) {
 		return
 	}
 
-	if len(requestsMade) == 0 {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "No Requests Made",
-		})
-		return
-	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"requests_made": requestsMade,
 	})
@@ -105,13 +152,6 @@ func (h *ExchangeHandler) GetExchangeRequestsReceived(c *gin.Context) {
 		log.Printf("Failed To Get Exchange Requests By Requested To ID %v\n", err)
 		c.JSON(response.Status(err), gin.H{
 			"error": err,
-		})
-		return
-	}
-
-	if len(requestsReceived) == 0 {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "No Requests Received",
 		})
 		return
 	}

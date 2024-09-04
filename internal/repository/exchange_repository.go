@@ -17,6 +17,8 @@ type ExchangeRepository interface {
 	IsSelfRequest(requestedByID, requestedToID uuid.UUID) bool
 	FindPendingRequests(requestedByID, requestedToID uuid.UUID) ([]entity.ExchangeRequest, error)
 	FindPendingRequestsByBookID(bookID uint) ([]entity.ExchangeRequest, error)
+	FindRequestsByBookIDAndUserID(bookID uint, userID uuid.UUID) ([]entity.ExchangeRequest, error)
+	FindRequestsByUserID(userID uuid.UUID) ([]entity.ExchangeRequest, error)
 }
 
 type exchangeRepository struct {
@@ -83,4 +85,17 @@ func (r *exchangeRepository) Update(exchangeRequest *entity.ExchangeRequest) err
 
 func (r *exchangeRepository) Delete(exchangeRequest *entity.ExchangeRequest) error {
 	return r.db.Delete(exchangeRequest).Error
+}
+
+func (r *exchangeRepository) FindRequestsByBookIDAndUserID(bookID uint, userID uuid.UUID) ([]entity.ExchangeRequest, error) {
+	var requests []entity.ExchangeRequest
+	err := r.db.Where("(requested_book_id = ? OR offered_book_id = ?) AND (requested_by_id = ? OR requested_to_id = ?)", bookID, bookID, userID, userID).Find(&requests).Error
+	return requests, err
+}
+
+func (r *exchangeRepository) FindRequestsByUserID(userID uuid.UUID) ([]entity.ExchangeRequest, error) {
+	var exchangeRequests []entity.ExchangeRequest
+	err := r.db.Preload("RequestedBy").Preload("RequestedTo").Preload("RequestedBook").Preload("RequestedBook.Owner").Preload("OfferedBook").Preload("OfferedBook.Owner").
+		Where("requested_by_id = ? OR requested_to_id = ?", userID, userID).Find(&exchangeRequests).Error
+	return exchangeRequests, err
 }

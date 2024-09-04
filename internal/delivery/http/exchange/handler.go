@@ -33,6 +33,7 @@ func NewExchangeHandler(c *Config) {
 	{
 		exchangeRoutes.POST("/", middleware.AuthUser(h.jwtService), h.CreateExchangeRequest)
 		exchangeRoutes.GET("/:id", middleware.AuthUser(h.jwtService), h.GetExchangeRequestByID)
+		exchangeRoutes.GET("/", middleware.AuthUser(h.jwtService), h.GetUserExchangeRequests)
 		exchangeRoutes.GET("/made", middleware.AuthUser(h.jwtService), h.GetExchangeRequestsMade)
 		exchangeRoutes.GET("/received", middleware.AuthUser(h.jwtService), h.GetExchangeRequestsReceived)
 		exchangeRoutes.POST("/:id/accept", middleware.AuthUser(h.jwtService), h.AcceptExchangeRequest)

@@ -12,7 +12,7 @@ import (
 
 type loginReq struct {
 	Email    string `gorm:"unique;not null" json:"email" binding:"required,email"`
-	Password string `gorm:"not null" json:"password" binding:"required,min=8"`
+	Password string `gorm:"not null" json:"password" binding:"required"`
 }
 
 func (h *UserHandler) LoginUser(c *gin.Context) {
@@ -49,9 +49,10 @@ func (h *UserHandler) LoginUser(c *gin.Context) {
 	c.SetCookie("token", token, 900, "/", "", true, true)
 	c.SetCookie("uid", user.UID.String(), 900, "/", "", true, true)
 
+	user.Password = ""
 	c.JSON(http.StatusOK, gin.H{
 		"token": token,
-		"uid":   user.UID,
+		"user":  user,
 	})
 
 }

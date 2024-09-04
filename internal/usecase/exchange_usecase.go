@@ -19,6 +19,8 @@ type ExchangeUsecase interface {
 	DeclineExchange(request *entity.ExchangeRequest, userID uuid.UUID) error
 	DeleteExchangeRequest(request *entity.ExchangeRequest, userID uuid.UUID) error
 	ConfirmExchange(request *entity.ExchangeRequest, userID uuid.UUID) error
+	GetExchangeRequestsByBookIDAndUserID(bookID uint, userID uuid.UUID) ([]entity.ExchangeRequest, error)
+	GetExchangeRequestsByUserID(userID uuid.UUID) ([]entity.ExchangeRequest, error)
 }
 
 type exchangeUsecase struct {
@@ -80,6 +82,36 @@ func (u *exchangeUsecase) GetExchangeRequestByID(id uuid.UUID, userID uuid.UUID)
 
 	return request, nil
 
+}
+
+func (u *exchangeUsecase) GetExchangeRequestsByBookIDAndUserID(bookID uint, userID uuid.UUID) ([]entity.ExchangeRequest, error) {
+	requests, err := u.exchangeRepo.FindRequestsByBookIDAndUserID(bookID, userID)
+	if err != nil {
+		return nil, response.NewInternalServerError()
+	}
+
+	for i := range requests {
+		if requests[i].Status != "accepted" && requests[i].Status != "exchanged" {
+			u.sanitizeExchangeRequest(&requests[i], userID)
+		}
+	}
+
+	return requests, nil
+}
+
+func (u *exchangeUsecase) GetExchangeRequestsByUserID(userID uuid.UUID) ([]entity.ExchangeRequest, error) {
+	requests, err := u.exchangeRepo.FindRequestsByUserID(userID)
+	if err != nil {
+		return nil, response.NewInternalServerError()
+	}
+
+	for i := range requests {
+		if requests[i].Status != "accepted" && requests[i].Status != "exchanged" {
+			u.sanitizeExchangeRequest(&requests[i], userID)
+		}
+	}
+
+	return requests, nil
 }
 
 func (u *exchangeUsecase) GetExchangeRequestsByRequestedByID(userID uuid.UUID) ([]entity.ExchangeRequest, error) {

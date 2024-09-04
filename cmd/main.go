@@ -59,7 +59,7 @@ func main() {
 	}))
 
 	router.Use(gin.Recovery())
-	// router.Use(middleware.CORS())
+	router.Use(middleware.CORS())
 	router.NoRoute(middleware.NoRouteHandler())
 
 	database := db.GetDB()
