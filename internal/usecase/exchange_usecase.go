@@ -208,7 +208,7 @@ func (u *exchangeUsecase) DeleteExchangeRequest(request *entity.ExchangeRequest,
 		// return response.NewAuthorizationError("you do not have permission")
 		return response.NewNotFoundError("exchange request", fmt.Sprintf("%v", request.ID))
 	}
-	if request.Status != "pending" {
+	if request.Status != "pending" && request.Status != "declined" {
 		return response.NewBadRequestError("only pending requests can be deleted")
 	}
 	err := u.exchangeRepo.Delete(request)

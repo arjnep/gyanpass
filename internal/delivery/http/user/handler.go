@@ -31,6 +31,7 @@ func NewUserHandler(c *Config) {
 		authRoutes.POST("/register", h.RegisterUser)
 		authRoutes.POST("/login", h.LoginUser)
 		authRoutes.POST("/logout", middleware.AuthUser(h.jwtService), h.LogoutUser)
+		authRoutes.GET("/validate-token", middleware.AuthUser(h.jwtService), h.ValidateToken)
 		// userAuth.POST("/forgot-password", middleware.AuthUser(h.jwtService), h.ForgotPassword)
 	}
 
