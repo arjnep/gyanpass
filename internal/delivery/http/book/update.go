@@ -17,8 +17,8 @@ type updateBookReq struct {
 	Genre       string  `json:"genre" binding:"omitempty"`
 	Description string  `json:"description" binding:"omitempty"`
 	Address     string  `json:"address" binding:"omitempty"`
-	Latitude    float64 `gorm:"not null" json:"lat" binding:"omitempty,latitude"`
-	Longitude   float64 `gorm:"not null" json:"long" binding:"omitempty,longitude"`
+	Latitude    float64 `gorm:"not null" json:"latitude" binding:"omitempty,latitude"`
+	Longitude   float64 `gorm:"not null" json:"longitude" binding:"omitempty,longitude"`
 }
 
 func (h *BookHandler) UpdateBook(c *gin.Context) {
@@ -75,11 +75,11 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 	}
 
 	if req.Latitude != 0 && req.Latitude != existingBook.PickupLocation.Latitude {
-		updates["lat"] = req.Latitude
+		updates["latitude"] = req.Latitude
 	}
 
 	if req.Longitude != 0 && req.Longitude != existingBook.PickupLocation.Longitude {
-		updates["long"] = req.Longitude
+		updates["longitude"] = req.Longitude
 	}
 
 	if len(updates) == 0 {
