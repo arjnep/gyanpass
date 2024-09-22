@@ -11,7 +11,7 @@
     * Create Usecase => Done
     * Create Handler => Done
     * Forgot Password =>
-    * Reset Password =>
+    * Reset Password => Done
     * Delete User =>
 * Book Service
     * Migrate Entity => Done

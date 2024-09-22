@@ -40,6 +40,6 @@ func NewUserHandler(c *Config) {
 		userRoutes.GET("/:id", middleware.AuthUser(h.jwtService), h.GetUser)
 		userRoutes.PUT("/:id", middleware.AuthUser(h.jwtService), h.UpdateUser)
 		// userRoutes.DELETE("/:id", middleware.AuthUser(h.jwtService), h.DeleteUser)
-		// userRoutes.POST("/reset-password", middleware.AuthUser(h.jwtService), h.ResetPassword)
+		userRoutes.PUT("/:id/reset-password", middleware.AuthUser(h.jwtService), h.ResetPassword)
 	}
 }

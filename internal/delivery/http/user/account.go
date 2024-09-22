@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/arjnep/gyanpass/pkg/crypto"
 	"github.com/arjnep/gyanpass/pkg/jwt"
 	"github.com/arjnep/gyanpass/pkg/response"
 	"github.com/arjnep/gyanpass/pkg/utils"
@@ -155,4 +156,115 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"user": updatedUser,
 	})
+}
+
+func (h *UserHandler) ResetPassword(c *gin.Context) {
+	authUser := c.MustGet("user").(*jwt.TokenClaims).User
+	pathUserID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		if uuid.IsInvalidLengthError(err) {
+			err := response.NewNotFoundError("users", c.Param("id"))
+			c.JSON(err.Status(), gin.H{
+				"error": err,
+			})
+			return
+		}
+		log.Printf("Unable to Parse User ID From Param for unknown reason: %v\n", c)
+		err := response.NewInternalServerError()
+		c.JSON(err.Status(), gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	if pathUserID != authUser.UID {
+		err := response.NewAuthorizationError("Unauthorized access to update this user data")
+		c.JSON(err.Status(), gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	existingUser, err := h.userUsecase.GetUserByID(authUser.UID)
+	if err != nil {
+		c.JSON(response.Status(err), gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	var req struct {
+		CurrentPassword string `gorm:"not null" json:"current-password" binding:"required"`
+		NewPassword     string `gorm:"not null" json:"new-password" binding:"required,min=8"`
+	}
+
+	if ok := utils.BindData(c, &req); !ok {
+		return
+	}
+
+	if req.CurrentPassword == req.NewPassword {
+		err := response.NewBadRequestError("the new password must be different")
+		c.JSON(err.Status(), gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	match, err := crypto.ComparePasswords(existingUser.Password, req.CurrentPassword)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	if !match {
+		err := response.NewAuthorizationError("invalid current password")
+		c.JSON(err.Status(), gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	if !isPasswordValid(req.NewPassword) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Password Must contain at least 1 Uppercase, 1 Lowercase, 1 Alphanumeric, 1 Number and should be above 8 character long",
+		})
+		return
+	}
+
+	updates := make(map[string]interface{})
+
+	hashedPwd, err := crypto.HashPassword(req.NewPassword)
+	if err != nil {
+		log.Printf("Unable to hash password: %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	updates["password"] = hashedPwd
+
+	if len(updates) == 0 {
+		err := response.NewBadRequestError("No fields to update")
+		c.JSON(err.Status(), gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	err = h.userUsecase.Update(existingUser, updates)
+	if err != nil {
+		log.Printf("Failed to update user: %v\n", err.Error())
+		c.JSON(response.Status(err), gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+	})
+
 }
