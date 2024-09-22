@@ -2,9 +2,11 @@ package usecase
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/arjnep/gyanpass/internal/entity"
 	"github.com/arjnep/gyanpass/internal/repository"
+	"github.com/arjnep/gyanpass/pkg/notification"
 	"github.com/arjnep/gyanpass/pkg/response"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -24,12 +26,13 @@ type ExchangeUsecase interface {
 }
 
 type exchangeUsecase struct {
-	exchangeRepo repository.ExchangeRepository
-	bookRepo     repository.BookRepository
+	exchangeRepo        repository.ExchangeRepository
+	bookRepo            repository.BookRepository
+	notificationService notification.Service
 }
 
-func NewExchangeUsecase(exchangeRepo repository.ExchangeRepository, bookRepo repository.BookRepository) ExchangeUsecase {
-	return &exchangeUsecase{exchangeRepo, bookRepo}
+func NewExchangeUsecase(exchangeRepo repository.ExchangeRepository, bookRepo repository.BookRepository, notificationService notification.Service) ExchangeUsecase {
+	return &exchangeUsecase{exchangeRepo, bookRepo, notificationService}
 }
 
 func (u *exchangeUsecase) RequestExchange(request *entity.ExchangeRequest) (*entity.ExchangeRequest, error) {
@@ -60,6 +63,14 @@ func (u *exchangeUsecase) RequestExchange(request *entity.ExchangeRequest) (*ent
 	}
 
 	u.sanitizeExchangeRequest(request, request.RequestedByID)
+
+	msg := "You have new exchange request for your book " + request.RequestedBook.Title + "."
+	err = u.notificationService.SendNotification(request.RequestedToID, "exchange request", msg)
+	if err != nil {
+		log.Println("Failed Sending Notification of new request:", err)
+		return nil, response.NewInternalServerError()
+	}
+
 	return request, nil
 }
 
@@ -175,6 +186,7 @@ func (u *exchangeUsecase) DeclineExchange(request *entity.ExchangeRequest, userI
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -191,15 +203,29 @@ func (u *exchangeUsecase) ConfirmExchange(request *entity.ExchangeRequest, userI
 		return response.NewBadRequestError("request is not accepted")
 	}
 
+	var recipientID uuid.UUID
+	var msg string
+
 	if request.RequestedByID == userID {
 		request.RequestedByConfirmed = true
+		recipientID = request.RequestedToID
+		msg = request.RequestedBy.FirstName + " confirmed the exchange request."
 	} else if request.RequestedToID == userID {
 		request.RequestedToConfirmed = true
+		recipientID = request.RequestedByID
+		msg = request.RequestedTo.FirstName + " confirmed the exchange request."
 	}
 	err := u.resolveExchangeRequest(request, "exchanged")
 	if err != nil {
 		return err
 	}
+
+	err = u.notificationService.SendNotification(recipientID, "exchange request", msg)
+	if err != nil {
+		log.Println("Failed Sending Notification confirm:", err)
+		return response.NewInternalServerError()
+	}
+
 	return nil
 }
 
@@ -272,13 +298,32 @@ func (u *exchangeUsecase) resolveExchangeRequest(request *entity.ExchangeRequest
 				err := u.exchangeRepo.Update(&pendingRequest)
 				if err != nil {
 					return response.NewInternalServerError()
+				} else {
+					msg := "Your Exchange Request For Book " + pendingRequest.RequestedBook.Title + " is declined."
+					err = u.notificationService.SendNotification(pendingRequest.RequestedByID, "exchange request", msg)
+					if err != nil {
+						log.Println("Failed Sending Notification for decline:", err)
+						return response.NewInternalServerError()
+					}
 				}
 			}
+		}
+		msg := "Your Exchange Request For Book " + request.RequestedBook.Title + " is accepted."
+		err = u.notificationService.SendNotification(request.RequestedByID, "exchange request", msg)
+		if err != nil {
+			log.Println("Failed Sending Notification for accept:", err)
+			return response.NewInternalServerError()
 		}
 	case "declined":
 		request.Status = "declined"
 		err := u.exchangeRepo.Update(request)
 		if err != nil {
+			return response.NewInternalServerError()
+		}
+		msg := "Your Exchange Request For Book " + request.RequestedBook.Title + " is declined."
+		err = u.notificationService.SendNotification(request.RequestedByID, "exchange request", msg)
+		if err != nil {
+			log.Println("Failed Sending Notification for decline:", err)
 			return response.NewInternalServerError()
 		}
 	case "exchanged":

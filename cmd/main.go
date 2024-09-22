@@ -15,11 +15,13 @@ import (
 	"github.com/arjnep/gyanpass/internal/db"
 	httpBook "github.com/arjnep/gyanpass/internal/delivery/http/book"
 	httpExchange "github.com/arjnep/gyanpass/internal/delivery/http/exchange"
+	httpNotification "github.com/arjnep/gyanpass/internal/delivery/http/notification"
 	httpUser "github.com/arjnep/gyanpass/internal/delivery/http/user"
 	"github.com/arjnep/gyanpass/internal/delivery/middleware"
 	"github.com/arjnep/gyanpass/internal/repository"
 	"github.com/arjnep/gyanpass/internal/usecase"
 	"github.com/arjnep/gyanpass/pkg/jwt"
+	"github.com/arjnep/gyanpass/pkg/notification"
 	"github.com/gin-gonic/gin"
 )
 
@@ -68,13 +70,14 @@ func main() {
 	userRepo := repository.NewUserRepository(database)
 	bookRepo := repository.NewBookRepository(database)
 	exchangeRepo := repository.NewExchangeRepository(database)
+	notificationRepo := repository.NewNotificationRepository(database)
 
 	jwtService := jwt.NewJWTService(cfg)
-	// notificationService := notification.NewNotificationService()
+	notificationService := notification.NewNotificationService(notificationRepo)
 
 	userUsecase := usecase.NewUserUsecase(userRepo, jwtService)
 	bookUsecase := usecase.NewBookUsecase(bookRepo)
-	exchangeUsecase := usecase.NewExchangeUsecase(exchangeRepo, bookRepo)
+	exchangeUsecase := usecase.NewExchangeUsecase(exchangeRepo, bookRepo, notificationService)
 
 	httpUser.NewUserHandler(&httpUser.Config{
 		R:           router,
@@ -91,6 +94,11 @@ func main() {
 		BookUsecase:     bookUsecase,
 		ExchangeUsecase: exchangeUsecase,
 		JwtService:      jwtService,
+	})
+	httpNotification.NewNotificationHandler(&httpNotification.Config{
+		R:                   router,
+		NotificationService: notificationService,
+		JWTService:          jwtService,
 	})
 
 	srv := &http.Server{

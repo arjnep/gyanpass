@@ -23,7 +23,7 @@
     * Migrate Entity => Done
     * Create Repository => Done
     * Create Usecase => Done
-    * Create Handler => 
+    * Create Handler => Done
 * Notification Service
-    * Create Model
-    * Create Notification
+    * Create Model => Done
+    * Create Notification => Done

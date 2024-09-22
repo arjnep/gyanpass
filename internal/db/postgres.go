@@ -51,7 +51,7 @@ func SetupPostgres() {
 }
 
 func migrate() error {
-	return db.AutoMigrate(&entity.User{}, &entity.Book{}, &entity.ExchangeRequest{})
+	return db.AutoMigrate(&entity.User{}, &entity.Book{}, &entity.ExchangeRequest{}, &entity.Notification{})
 }
 
 func GetDB() *gorm.DB {

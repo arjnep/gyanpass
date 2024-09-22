@@ -28,6 +28,7 @@ func (h *BookHandler) GetUserBooks(c *gin.Context) {
 		c.JSON(response.Status(err), gin.H{
 			"error": err,
 		})
+		return
 	}
 
 	if len(books) == 0 {
