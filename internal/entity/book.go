@@ -8,6 +8,7 @@ type Book struct {
 	Author         string    `gorm:"not null" json:"author" binding:"required"`
 	Genre          string    `json:"genre" binding:"omitempty"`
 	Description    string    `json:"description" binding:"omitempty"`
+	ImageUrl       string    `gorm:"not null" json:"image_url" binding:"required"`
 	UserID         uuid.UUID `gorm:"not null" json:"user_id,omitempty"`
 	Owner          User      `gorm:"foreignKey:UserID" json:"owner"`
 	PickupLocation Location  `gorm:"embedded" json:"location,omitempty" binding:"required"`

@@ -16,6 +16,7 @@ type updateBookReq struct {
 	Author      string  `gorm:"not null" json:"author" binding:"omitempty"`
 	Genre       string  `json:"genre" binding:"omitempty"`
 	Description string  `json:"description" binding:"omitempty"`
+	ImageUrl    string  `gorm:"not null" json:"image_url" binding:"omitempty"`
 	Address     string  `json:"address" binding:"omitempty"`
 	Latitude    float64 `gorm:"not null" json:"latitude" binding:"omitempty,latitude"`
 	Longitude   float64 `gorm:"not null" json:"longitude" binding:"omitempty,longitude"`
@@ -69,6 +70,9 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 	if req.Description != "" && req.Description != existingBook.Description {
 		updates["description"] = req.Description
 	}
+	if req.ImageUrl != "" && req.ImageUrl != existingBook.ImageUrl {
+		updates["image_url"] = req.ImageUrl
+	}
 
 	if req.Address != "" && req.Address != existingBook.PickupLocation.Address {
 		updates["address"] = req.Address
@@ -109,7 +113,7 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"user": updatedBook,
+		"book": updatedBook,
 	})
 
 }

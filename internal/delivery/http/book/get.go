@@ -84,6 +84,7 @@ func (h *BookHandler) GetBook(c *gin.Context) {
 			"author":      book.Author,
 			"genre":       book.Genre,
 			"description": book.Description,
+			"image_url":   book.ImageUrl,
 			"owner": gin.H{
 				"user_id":    book.Owner.UID,
 				"first_name": book.Owner.FirstName,
