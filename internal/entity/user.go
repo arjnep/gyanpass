@@ -11,5 +11,5 @@ type User struct {
 	Email     string    `gorm:"unique;not null" json:"email,omitempty" binding:"required,email"`
 	Phone     string    `gorm:"unique;not null" json:"phone,omitempty" binding:"required"`
 	Password  string    `gorm:"not null" json:"-" binding:"required,min=8"`
-	Role      string    `gorm:"not null" json:"role,omitempty"` // "admin", "user"
+	Role      string    `gorm:"default:user" json:"role,omitempty"` // "admin", "user"
 }

@@ -194,8 +194,8 @@ func (h *UserHandler) ResetPassword(c *gin.Context) {
 	}
 
 	var req struct {
-		CurrentPassword string `gorm:"not null" json:"current-password" binding:"required"`
-		NewPassword     string `gorm:"not null" json:"new-password" binding:"required,min=8"`
+		CurrentPassword string `gorm:"not null" json:"current_password" binding:"required"`
+		NewPassword     string `gorm:"not null" json:"new_password" binding:"required,min=8"`
 	}
 
 	if ok := utils.BindData(c, &req); !ok {
@@ -219,7 +219,7 @@ func (h *UserHandler) ResetPassword(c *gin.Context) {
 	}
 
 	if !match {
-		err := response.NewAuthorizationError("invalid current password")
+		err := response.NewBadRequestError("invalid current password")
 		c.JSON(err.Status(), gin.H{
 			"error": err,
 		})
@@ -227,8 +227,9 @@ func (h *UserHandler) ResetPassword(c *gin.Context) {
 	}
 
 	if !isPasswordValid(req.NewPassword) {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Password Must contain at least 1 Uppercase, 1 Lowercase, 1 Alphanumeric, 1 Number and should be above 8 character long",
+		err := response.NewBadRequestError("password must contain at least 1 uppercase, 1 lowercase, 1 alphanumeric, 1 number and should be above 8 character long")
+		c.JSON(err.Status(), gin.H{
+			"error": err,
 		})
 		return
 	}

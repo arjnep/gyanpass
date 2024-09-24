@@ -30,13 +30,6 @@ func (h *NotificationHandler) GetUserNotifications(c *gin.Context) {
 		return
 	}
 
-	if len(notifications) == 0 {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "No Notifications Available",
-		})
-		return
-	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"notifications": notifications,
 	})
