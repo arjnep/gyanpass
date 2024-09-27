@@ -12,14 +12,14 @@ import (
 )
 
 type addBookReq struct {
-	Title       string  `gorm:"not null" json:"title" binding:"required"`
-	Author      string  `gorm:"not null" json:"author" binding:"required"`
-	Genre       string  `json:"genre" binding:"omitempty"`
-	Description string  `json:"description" binding:"omitempty"`
-	ImageUrl    string  `gorm:"not null" json:"image_url" binding:"required"`
-	Address     string  `json:"address" binding:"omitempty"`
-	Latitude    float64 `gorm:"not null" json:"latitude" binding:"required,latitude"`
-	Longitude   float64 `gorm:"not null" json:"longitude" binding:"required,longitude"`
+	Title       string             `gorm:"not null" json:"title" binding:"required"`
+	Author      string             `gorm:"not null" json:"author" binding:"required"`
+	Genre       string             `json:"genre" binding:"omitempty"`
+	ImageUrl    string             `gorm:"not null" json:"image_url" binding:"required"`
+	Address     string             `json:"address" binding:"omitempty"`
+	Description entity.Description `gorm:"embedded" json:"description" binding:"required"`
+	Latitude    float64            `gorm:"not null" json:"latitude" binding:"required,latitude"`
+	Longitude   float64            `gorm:"not null" json:"longitude" binding:"required,longitude"`
 }
 
 func (h *BookHandler) AddBook(c *gin.Context) {

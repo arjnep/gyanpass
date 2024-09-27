@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/arjnep/gyanpass/internal/entity"
 	"github.com/arjnep/gyanpass/pkg/jwt"
 	"github.com/arjnep/gyanpass/pkg/response"
 	"github.com/arjnep/gyanpass/pkg/utils"
@@ -12,14 +13,14 @@ import (
 )
 
 type updateBookReq struct {
-	Title       string  `gorm:"not null" json:"title" binding:"omitempty"`
-	Author      string  `gorm:"not null" json:"author" binding:"omitempty"`
-	Genre       string  `json:"genre" binding:"omitempty"`
-	Description string  `json:"description" binding:"omitempty"`
-	ImageUrl    string  `gorm:"not null" json:"image_url" binding:"omitempty"`
-	Address     string  `json:"address" binding:"omitempty"`
-	Latitude    float64 `gorm:"not null" json:"latitude" binding:"omitempty,latitude"`
-	Longitude   float64 `gorm:"not null" json:"longitude" binding:"omitempty,longitude"`
+	Title       string              `gorm:"not null" json:"title" binding:"omitempty"`
+	Author      string              `gorm:"not null" json:"author" binding:"omitempty"`
+	Genre       string              `json:"genre" binding:"omitempty"`
+	Description *entity.Description `json:"description" binding:"omitempty"`
+	ImageUrl    string              `gorm:"not null" json:"image_url" binding:"omitempty"`
+	Address     string              `json:"address" binding:"omitempty"`
+	Latitude    float64             `gorm:"not null" json:"latitude" binding:"omitempty,latitude"`
+	Longitude   float64             `gorm:"not null" json:"longitude" binding:"omitempty,longitude"`
 }
 
 func (h *BookHandler) UpdateBook(c *gin.Context) {
@@ -67,9 +68,20 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 	if req.Genre != "" && req.Genre != existingBook.Genre {
 		updates["genre"] = req.Genre
 	}
-	if req.Description != "" && req.Description != existingBook.Description {
-		updates["description"] = req.Description
+
+	if req.Description != nil {
+		log.Println(req.Description)
+		if req.Description.Message != "" && req.Description.Message != existingBook.Description.Message {
+			updates["message"] = req.Description.Message
+		}
+		if req.Description.Condition != "" && req.Description.Condition != existingBook.Description.Condition {
+			updates["condition"] = req.Description.Condition
+		}
+		if req.Description.PreferredExchange != "" && req.Description.PreferredExchange != existingBook.Description.PreferredExchange {
+			updates["preferred_exchange"] = req.Description.PreferredExchange
+		}
 	}
+
 	if req.ImageUrl != "" && req.ImageUrl != existingBook.ImageUrl {
 		updates["image_url"] = req.ImageUrl
 	}
