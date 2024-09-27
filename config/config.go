@@ -23,6 +23,7 @@ type DatabaseConfiguration struct {
 	Password     string
 	Host         string
 	Port         string
+	SSLMode      string
 	MaxLifetime  int
 	MaxOpenConns int
 	MaxIdleConns int
@@ -36,10 +37,12 @@ type Configuration struct {
 var config *Configuration
 
 func LoadConfig() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error Loading Environment Variables: %v", err)
-		return
+	if os.Getenv("SERVER_MODE") != "production" {
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatalf("Error Loading Environment Variables: %v", err)
+			return
+		}
 	}
 
 	ctxTimeout, _ := strconv.Atoi(os.Getenv("SERVER_TIMEOUT"))
@@ -63,6 +66,7 @@ func LoadConfig() {
 			Password:     os.Getenv("DATABASE_PASSWORD"),
 			Host:         os.Getenv("DATABASE_HOST"),
 			Port:         os.Getenv("DATABASE_PORT"),
+			SSLMode:      os.Getenv("DATABASE_SSLMODE"),
 			MaxLifetime:  dbMaxLifetime,
 			MaxOpenConns: dbMaxOpenConns,
 			MaxIdleConns: dbMaxIdleConns,
