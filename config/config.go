@@ -49,7 +49,7 @@ func LoadConfig() {
 	dbMaxLifetime, _ := strconv.Atoi(os.Getenv("DATABASE_MAX_LIFETIME"))
 	dbMaxOpenConns, _ := strconv.Atoi(os.Getenv("DATABASE_MAX_OPEN_CONNS"))
 	dbMaxIdleConns, _ := strconv.Atoi(os.Getenv("DATABASE_MAX_IDLE_CONNS"))
-	jWTExpiry, _ := strconv.Atoi(os.Getenv("SERVER_JWTExpiry"))
+	jWTExpiry, _ := strconv.Atoi(os.Getenv("SERVER_JWTEXPIRY"))
 
 	cfg := &Configuration{
 		Server: ServerConfiguration{
