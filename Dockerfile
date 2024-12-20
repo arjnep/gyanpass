@@ -1,15 +1,23 @@
-FROM golang:1.23-alpine AS builder
+FROM golang:latest AS builder
+
 WORKDIR /app
-COPY go.* ./
+
+COPY go.mod go.sum ./
+
 RUN go mod tidy
+
 COPY . .
-RUN go build -o gyanpass ./cmd/main.go
- 
- 
-FROM alpine:latest AS runner
-WORKDIR /app
+
+RUN CGO_ENABLED=0 GOOS=linux go build -o gyanpass cmd/main.go
+
+FROM alpine:latest  
+
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /root/
+
 COPY --from=builder /app/gyanpass .
-COPY --from=builder /app/.env .env
 
 EXPOSE 8080
-ENTRYPOINT ["./gyanpass"]
+
+CMD ["./gyanpass"]
