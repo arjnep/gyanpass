@@ -12,8 +12,8 @@ const (
 	DEFAULT_SIZE_TEXT    = "size"
 	DEFAULT_PAGE         = "1"
 	DEFAULT_PAGE_SIZE    = "10"
-	DEFAULT_MIN_PAGESIZE = 10
-	DEFAULT_MAX_PAGESIZE = 100
+	DEFAULT_MIN_PAGESIZE = 4
+	DEFAULT_MAX_PAGESIZE = 20
 )
 
 func Pagination() gin.HandlerFunc {
